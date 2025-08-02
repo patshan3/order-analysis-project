@@ -1,0 +1,5 @@
+# The following packages will need to be added to the environment
+
+pandas>=2.3.1
+matplotlib>=3.10.5
+pytest>=8.4.1
