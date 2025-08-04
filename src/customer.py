@@ -39,34 +39,58 @@ class Customer:
         count = len(self.order_ids)
         return count
 
+
+    def _merged_orders(self) -> pd.DataFrame:
+        """Returns a merged DataFrame of this customer's orders and product info, with line totals."""
+        merged = pd.merge(self.orders_df, self.products_df, how='left', on='product_id')
+        merged["total"] = merged["quantity"] * merged["price"]
+        return merged
+
     def order_total(self, order_id=None) -> float:
         """Returns the total order value of a given order or a cusomters total orders if
         no order_id is provided"""
 
         # Order quantity * product price
-        # Merge the product and order dataframes
-        merged = pd.merge(self.orders_df, self.products_df,
-                          how='left', on='product_id')
-        # Calculate the product totals
-        merged["total"] = merged["quantity"]*merged["price"]
-
+        merged = self._merged_orders()
         if order_id is None:
-            total = merged["total"].sum()
-        else:
-            total = merged[merged["order_id"] == order_id]["total"].sum()
-        return total
+            return round(merged["total"].sum(), 2)
+        return round(merged[merged["order_id"] == order_id]["total"].sum(), 2)
 
-    def avg_order(self) -> float:
+    def avg_order_value(self) -> float:
         """Returns the average order value for a given customer"""
 
         # Merge the product and order dataframes
-        merged = pd.merge(self.orders_df, self.products_df,
-                          how='left', on='product_id')
-        # Calculate the product totals
-        merged["total"] = merged["quantity"]*merged["price"]
-        # Calculate the order totals
+        merged = self._merged_orders()
         order_totals = merged.groupby("order_id")["total"].sum()
         # average the order totals
         avg = order_totals.mean()
 
         return round(avg, 2)
+
+    def max_order(self) -> float:
+        """Returns the max order for a given customer"""
+        # Merge the product and order dataframes
+        merged = self._merged_orders()
+        # Calculate the max order
+        max_order = merged.groupby("order_id")["total"].sum(
+        ).sort_values(ascending=False).iloc[0]
+
+        return max_order
+
+    def min_order(self) -> float:
+        """Returns the max order for a given customer"""
+        # Merge the product and order dataframes
+        merged = self._merged_orders()
+        # Calculate the min order
+        min_order = merged.groupby("order_id")["total"].sum(
+        ).sort_values(ascending=False).iloc[-1]
+
+        return min_order
+
+    def most_freq(self) -> pd.DataFrame:
+        """Returns a datafram of the 10 most frequently ordered products"""
+        freq_df = self.orders_df["quantity"].groupby(
+            "product_id").sum().sort_values(ascending=False).head(10)
+
+        return freq_df
+
